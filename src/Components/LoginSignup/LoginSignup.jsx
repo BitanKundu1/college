@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
+
 
 const LoginPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [department, setDepartment] = useState('');
   const [year, setYear] = useState('');
   const [isLogin, setIsLogin] = useState(true);
@@ -32,27 +36,55 @@ const LoginPage = () => {
     }
   };
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
-    console.log('Signing up with:', name, email, password, department, year);
+    console.log('Signing up with:', name, email, password, confirmPassword, department, year);
 
-    // Validate all required fields for signup
-    if (name.trim() === '' || email.trim() === '' || password.trim() === '' || department.trim() === '' || year.trim() === '') {
+    if (name.trim() === '' || email.trim() === '' || password.trim() === '' || confirmPassword.trim() === '' || department.trim() === '' || year.trim() === '') {
       alert('Please fill out all fields for signup.');
       return;
     }
 
-    // Perform signup logic here (e.g., create user)
-    // Simulating successful signup (replace this with your actual signup logic)
-    const signupSuccessful = true;
+    if (isNaN(year) || year < 1 || year > 4) {
+      alert('Year should be between 1 and 4.');
+      return;
+    }
 
-    if (signupSuccessful) {
-      // Navigate to home page upon successful signup
-      navigate('/home');
-    } else {
-      alert('Signup failed. Please try again.');
+    if (password!== confirmPassword) {
+      alert('Passwords do not match.');
+      return;
+    }
+
+    try {
+      const response = await axios.post('http://localhost:80/college1/index.php', {
+        name,
+        email,
+        password,
+        confirmPassword,
+        department,
+        year,
+      });
+    
+      if (response.data.success) {
+        navigate('/home');
+      } else {
+        alert(`Signup failed: ${response.data.error}`);
+      }
+    } catch (error) {
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        alert(`Signup failed: ${error.response.data.error}`);
+      } else if (error.request) {
+        // The request was made but no response was received
+        alert('No response from the server');
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        alert('Error setting up the request');
+      }
     }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -62,7 +94,7 @@ const LoginPage = () => {
             {isLogin ? 'Sign in to your account' : 'Create an account'}
           </h2>
         </div>
-        <form className="mt-8 space-y-6">
+        <form className="mt-8 space-y-6" onSubmit={isLogin ? handleLogin : handleSignup}>
           {!isLogin && (
             <div className="rounded-md shadow-sm -space-y-px">
               <div>
@@ -107,7 +139,7 @@ const LoginPage = () => {
                   type="text"
                   autoComplete="year"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                   placeholder="Year"
                   value={year}
                   onChange={(e) => setYear(e.target.value)}
@@ -141,12 +173,30 @@ const LoginPage = () => {
               type="password"
               autoComplete="current-password"
               required
-              className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+              className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+          {!isLogin && (
+            <div>
+              <label htmlFor="confirm-password" className="sr-only">
+                Confirm Password
+              </label>
+              <input
+                id="confirm-password"
+                name="confirm-password"
+                type="password"
+                autoComplete="new-password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+          )}
 
           <div className="flex items-center justify-between">
             <div className="text-sm">
@@ -162,9 +212,8 @@ const LoginPage = () => {
 
           <div>
             <button
-              type="button"
+              type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              onClick={isLogin ? handleLogin : handleSignup}
             >
               {isLogin ? 'Sign in' : 'Sign up'}
             </button>
